@@ -113,23 +113,34 @@ begin
 end;
 
 procedure TFormMain.Post(id, hash: String);
+// QUEST HELPER https://esi.evetech.net/v1/killmails/91654347/eb57d7e799ed9fb1cd9942f42d1f0410ce5d3e8c/?datasource=tranquility
 var
   PostData: TStringList;
-  page: String;
+  page, message1: String;
 begin
   page := '';
   PostData := TStringList.Create;
 
   try
     IdHTTP.Request.Referer := 'https://zkillboard.com/post/';
-    PostData.Add('killmailurl=https%3A%2F%2Fesi.evetech.net%2Fv1%2Fkillmails%2F'+id+'%2F'+hash+'%2F%3Fdatasource%3Dtranquility');
+    // PostData.Add('killmailurl=https%3A%2F%2Fesi.evetech.net%2Fv1%2Fkillmails%2F'+id+'%2F'+hash+'%2F%3Fdatasource%3Dtranquility');
+    PostData.Add('killmailurl=https://esi.evetech.net/v1/killmails/'+id+'/'+hash+'/?datasource=tranquility');
+    // PostData.Add('killmailurl=123');
     page := IdHTTP.Post('https://zkillboard.com/post/', PostData);
 
     MemoResult.Clear;
     MemoResult.Lines.Add(page);
   except
-    on E : Exception do
-      ShowMessage(E.ClassName+' поднята ошибка, с сообщением : '+E.Message);
+    on E : Exception do begin
+      message1 := E.ClassName + ': ' + E.Message;
+
+      if (Pos('302 Found', E.Message) = 0) then begin
+        ShowMessage(message1);
+      end else begin
+        MemoResult.Clear;
+        MemoResult.Lines.Add(message1);
+      end;
+    end;
   end;
 
   PostData.Free;
