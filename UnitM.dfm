@@ -330,7 +330,7 @@ object FormMain: TFormMain
     Request.Accept = 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
     Request.AcceptLanguage = 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3'
     Request.BasicAuthentication = False
-    Request.UserAgent = 'EasyPost'
+    Request.UserAgent = 'EasyPost (https://github.com/truekenny/EasyPost)'
     Request.Ranges.Units = 'bytes'
     Request.Ranges = <>
     HTTPOptions = [hoForceEncodeParams]

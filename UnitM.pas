@@ -115,7 +115,7 @@ Examples:
 https://esi.evetech.net/v1/killmails/91650392/0ef7394f0d770d96567063fbda8d6612437a1c10/?datasource=tranquility
 *)
 const
-  Pattern = '(<url=killReport:\d+:[^>]+>|killmails/\d+/[^/]+/)';
+  Pattern = '(<url=killReport:\d+:[0-9a-fA-F]{40}>|killmails/\d+/[0-9a-fA-F]{40}/)';
 var
   i, j: Integer;
   RegEx: TRegEx;
