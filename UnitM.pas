@@ -15,6 +15,9 @@ uses
 
   ClipBrd;
 
+const
+  MAX_POST_IDS = 10000;
+
 type
   TFormMain = class(TForm)
     TrayIcon: TTrayIcon;
@@ -36,6 +39,8 @@ type
     procedure FormDestroy(Sender: TObject);
   private
     { Private declarations }
+    postIds: Array[0..MAX_POST_IDS] of Integer;
+    postIdCount: Integer;
 
     // https://delphisources.ru/pages/faq/base/clipbrd_chg_notify.html
     FNextClipboardViewer: HWND;
@@ -43,23 +48,47 @@ type
     procedure WMDrawClipboard(var Msg : TWMDrawClipboard); message WM_DRAWCLIPBOARD;
   public
     { Public declarations }
+    function GetClipboardText(): String;
     procedure ClipboardChange();
     procedure RemeberKillmailId(idString: String);
     function IsPostedKillmailId(idString: String): Boolean;
     procedure Post(id, hash: String);
-    procedure Explode(var a: array of string; Border, S: string);
+    procedure Explode(var a: Array of String; Border, S: String);
   end;
 
-const
-  MAX_POST_IDS = 10000;
 var
   FormMain: TFormMain;
-  postIds: Array[0..MAX_POST_IDS] of Integer;
-  postIdCount: Integer = 0;
 
 implementation
 
 {$R *.dfm}
+
+function TFormMain.GetClipboardText(): String;
+const
+  MAX_RETRY_COUNT = 3;
+var
+  RetryCount : Integer;
+  Success: Boolean;
+begin
+  RetryCount := 0;
+  Success := False;
+
+  while not Success do
+  try
+    // Clipboard can be locked
+    Result := Clipboard.AsText;
+    Success := True;
+  except
+    on Exception do begin
+      Inc(RetryCount);
+      if RetryCount <= MAX_RETRY_COUNT then begin
+        Sleep(RetryCount * 100)
+      end else begin
+        raise Exception.Create('GetClipboardText failed');
+      end;
+    end;
+  end;
+end;
 
 procedure TFormMain.RemeberKillmailId(idString: String);
 var
@@ -130,7 +159,7 @@ begin
   SetLength(explodedString, 10);
   RegEx := TRegEx.Create(Pattern);
 
-  Matches := RegEx.Matches(Clipboard.AsText);
+  Matches := RegEx.Matches(GetClipboardText());
   for j := 0 to Matches.Count - 1 do begin
     Match := Matches.Item[j].Value;
 
@@ -222,22 +251,24 @@ begin
   Sleep(1000);
 end;
 
-procedure TFormMain.Explode(var a: array of string; Border, S: string);
+procedure TFormMain.Explode(var a: Array of String; Border, S: String);
 var
-    S2: string;
-   i: Integer;
+  S2: string;
+  i: Integer;
 begin
-   i  := 0;
-   S2 := S + Border;
-   repeat
-     a[i] := Copy(S2, 0,Pos(Border, S2) - 1);
-     Delete(S2, 1,Length(a[i] + Border));
-     Inc(i);
-   until S2 = '';
+  i  := 0;
+  S2 := S + Border;
+  repeat
+    a[i] := Copy(S2, 0,Pos(Border, S2) - 1);
+    Delete(S2, 1,Length(a[i] + Border));
+    Inc(i);
+  until S2 = '';
 end;
 
 procedure TFormMain.FormCreate(Sender: TObject);
 begin
+  postIdCount := 0;
+
   FNextClipboardViewer := SetClipboardViewer(Handle);
 end;
 
