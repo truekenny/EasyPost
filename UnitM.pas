@@ -9,7 +9,9 @@ uses
 
   System.RegularExpressions, IdBaseComponent, IdComponent, IdTCPConnection,
   IdTCPClient, IdHTTP, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
-  IdSSLOpenSSL;
+  IdSSLOpenSSL,
+
+  MMSystem;
 
 type
   TFormMain = class(TForm)
@@ -157,6 +159,7 @@ var
 begin
   if (inArray(id)) then begin
     // Skip
+    sndPlaySound('skip.wav', SND_NODEFAULT Or SND_ASYNC);
     LabeledEditSkip.Text := IntToStr(StrToInt(LabeledEditSkip.Text) + 1);
     Exit;
   end;
@@ -166,13 +169,14 @@ begin
 
   try
     IdHTTP.Request.Referer := 'https://zkillboard.com/post/';
-    PostData.Add('killmailurl=https://esi.evetech.net/v1/killmails/'+id+'/'+hash+'/?datasource=tranquility');
+    PostData.Add('killmailurl=https://esi.evetech.net/v1/killmails/' + id + '/' + hash + '/?datasource=tranquility');
     page := IdHTTP.Post('https://zkillboard.com/post/', PostData);
 
     MemoResult.Clear;
     MemoResult.Lines.Add(page);
 
     // Wrong post
+    sndPlaySound('wrong.wav', SND_NODEFAULT Or SND_ASYNC);
     LabeledEditWrongPost.Text := IntToStr(StrToInt(LabeledEditWrongPost.Text) + 1);
   except
     on E: EIdHTTPProtocolException do begin
@@ -183,9 +187,11 @@ begin
 
       if (E.ErrorCode = 302) then begin
         // Success
+        sndPlaySound('success.wav', SND_NODEFAULT Or SND_ASYNC);
         LabeledEditSuccess.Text := IntToStr(StrToInt(LabeledEditSuccess.Text) + 1);
       end else begin
         // Error
+        sndPlaySound('error.wav', SND_NODEFAULT Or SND_ASYNC);
         LabeledEditError.Text := IntToStr(StrToInt(LabeledEditError.Text) + 1);
 
         ShowMessage(message1);
@@ -198,6 +204,7 @@ begin
       MemoResult.Lines.Add(message1);
 
       // Error
+      sndPlaySound('error.wav', SND_NODEFAULT Or SND_ASYNC);
       LabeledEditError.Text := IntToStr(StrToInt(LabeledEditError.Text) + 1);
 
       ShowMessage(message1);
@@ -206,7 +213,6 @@ begin
 
   PostData.Free;
 
-  Beep;
   Sleep(1000);
 end;
 
