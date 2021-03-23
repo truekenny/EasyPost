@@ -40,6 +40,7 @@ type
     { Private declarations }
   public
     { Public declarations }
+    procedure addInArray(idString: String);
     function inArray(idString: String): Boolean;
     procedure Post(id, hash: String);
     procedure Explode(var a: array of string; Border, S: string);
@@ -56,13 +57,10 @@ implementation
 
 {$R *.dfm}
 
-function TFormMain.inArray(idString: String): Boolean;
+procedure TFormMain.addInArray(idString: String);
 var
-  i, id: Integer;
+  id: Integer;
 begin
-  Result := False;
-
-  id := 0;
   try
     id := StrToInt(idString);
   finally
@@ -74,15 +72,28 @@ begin
     postIdCount := 0;
   end;
 
+  postIdCount := postIdCount + 1;
+  postIds[postIdCount - 1] := id;
+end;
+
+function TFormMain.inArray(idString: String): Boolean;
+var
+  i, id: Integer;
+begin
+  Result := False;
+
+  try
+    id := StrToInt(idString);
+  finally
+
+  end;
+
   for i := 0 to postIdCount - 1 do begin
     if (postIds[i] = id) then begin
       Result := True;
       Exit;
     end;
   end;
-
-  postIdCount := postIdCount + 1;
-  postIds[postIdCount - 1] := id;
 end;
 
 procedure TFormMain.menuQuitClick(Sender: TObject);
@@ -189,6 +200,8 @@ begin
         // Success
         sndPlaySound('success.wav', SND_NODEFAULT Or SND_ASYNC);
         LabeledEditSuccess.Text := IntToStr(StrToInt(LabeledEditSuccess.Text) + 1);
+
+        addInArray(id);
       end else begin
         // Error
         sndPlaySound('error.wav', SND_NODEFAULT Or SND_ASYNC);
