@@ -23,27 +23,64 @@ type
     IdHTTP: TIdHTTP;
     IdSSLIOHandlerSocketOpenSSL: TIdSSLIOHandlerSocketOpenSSL;
     MemoResult: TMemo;
+    LabeledEditWrongPost: TLabeledEdit;
+    LabeledEditError: TLabeledEdit;
+    LabeledEditSuccess: TLabeledEdit;
+    LabeledEditSkip: TLabeledEdit;
+    menuShowMainFormDebug: TMenuItem;
+    LabelCurrentClipboard: TLabel;
+    LabelLastClipboard: TLabel;
+    LabelPostResults: TLabel;
     procedure menuQuitClick(Sender: TObject);
     procedure TimerTimer(Sender: TObject);
-    procedure FormCreate(Sender: TObject);
+    procedure menuShowMainFormDebugClick(Sender: TObject);
   private
     { Private declarations }
   public
     { Public declarations }
+    function inArray(idString: String): Boolean;
     procedure Post(id, hash: String);
     procedure Explode(var a: array of string; Border, S: string);
   end;
 
+const
+  MAX_POST_IDS = 10000;
 var
   FormMain: TFormMain;
+  postIds: Array[0..MAX_POST_IDS] of Integer;
+  postIdCount: Integer = 0;
 
 implementation
 
 {$R *.dfm}
 
-procedure TFormMain.FormCreate(Sender: TObject);
+function TFormMain.inArray(idString: String): Boolean;
+var
+  i, id: Integer;
 begin
-  // Post('91650826', '2876d8ccc7f479c6a73b7b9e80d2dfc4b538d090');
+  Result := False;
+
+  id := 0;
+  try
+    id := StrToInt(idString);
+  finally
+
+  end;
+
+  // Reset
+  if (postIdCount = MAX_POST_IDS - 1) then begin
+    postIdCount := 0;
+  end;
+
+  for i := 0 to postIdCount - 1 do begin
+    if (postIds[i] = id) then begin
+      Result := True;
+      Exit;
+    end;
+  end;
+
+  postIdCount := postIdCount + 1;
+  postIds[postIdCount - 1] := id;
 end;
 
 procedure TFormMain.menuQuitClick(Sender: TObject);
@@ -51,8 +88,16 @@ begin
   Close;
 end;
 
+procedure TFormMain.menuShowMainFormDebugClick(Sender: TObject);
+begin
+  menuShowMainFormDebug.Checked := not menuShowMainFormDebug.Checked;
+
+  Visible := menuShowMainFormDebug.Checked;
+end;
+
 procedure TFormMain.TimerTimer(Sender: TObject);
 (*
+Examples:
 <url=killReport:91650826:2876d8ccc7f479c6a73b7b9e80d2dfc4b538d090>Kill: Mr Antisocial (Stiletto)</url>
 https://esi.evetech.net/v1/killmails/91650392/0ef7394f0d770d96567063fbda8d6612437a1c10/?datasource=tranquility
 *)
@@ -68,13 +113,6 @@ var
 begin
   MemoCurrent.Clear;
   MemoCurrent.PasteFromClipboard;
-
-  (*
-  for i := 0 to MemoCurrent.Lines.Count - 1 do begin
-    MemoCurrent.Lines[i] := StringReplace(MemoCurrent.Lines[i], '</url>', '</url>1' + #13#10,
-                          [rfReplaceAll]);
-  end;
-  *)
 
   if (not MemoCurrent.Lines.Equals(MemoLast.Lines)) then begin
     MemoLast.Clear;
@@ -113,39 +151,60 @@ begin
 end;
 
 procedure TFormMain.Post(id, hash: String);
-// QUEST HELPER https://esi.evetech.net/v1/killmails/91654347/eb57d7e799ed9fb1cd9942f42d1f0410ce5d3e8c/?datasource=tranquility
 var
   PostData: TStringList;
   page, message1: String;
 begin
+  if (inArray(id)) then begin
+    // Skip
+    LabeledEditSkip.Text := IntToStr(StrToInt(LabeledEditSkip.Text) + 1);
+    Exit;
+  end;
+
   page := '';
   PostData := TStringList.Create;
 
   try
     IdHTTP.Request.Referer := 'https://zkillboard.com/post/';
-    // PostData.Add('killmailurl=https%3A%2F%2Fesi.evetech.net%2Fv1%2Fkillmails%2F'+id+'%2F'+hash+'%2F%3Fdatasource%3Dtranquility');
     PostData.Add('killmailurl=https://esi.evetech.net/v1/killmails/'+id+'/'+hash+'/?datasource=tranquility');
-    // PostData.Add('killmailurl=123');
     page := IdHTTP.Post('https://zkillboard.com/post/', PostData);
 
     MemoResult.Clear;
     MemoResult.Lines.Add(page);
+
+    // Wrong post
+    LabeledEditWrongPost.Text := IntToStr(StrToInt(LabeledEditWrongPost.Text) + 1);
   except
+    on E: EIdHTTPProtocolException do begin
+      message1 := E.ClassName + ': ' + E.Message;
+
+      MemoResult.Clear;
+      MemoResult.Lines.Add(message1);
+
+      if (E.ErrorCode = 302) then begin
+        // Success
+        LabeledEditSuccess.Text := IntToStr(StrToInt(LabeledEditSuccess.Text) + 1);
+      end else begin
+        // Error
+        LabeledEditError.Text := IntToStr(StrToInt(LabeledEditError.Text) + 1);
+
+        ShowMessage(message1);
+      end;
+    end;
     on E : Exception do begin
       message1 := E.ClassName + ': ' + E.Message;
 
-      if (Pos('302 Found', E.Message) = 0) then begin
-        ShowMessage(message1);
-      end else begin
-        MemoResult.Clear;
-        MemoResult.Lines.Add(message1);
-      end;
+      MemoResult.Clear;
+      MemoResult.Lines.Add(message1);
+
+      // Error
+      LabeledEditError.Text := IntToStr(StrToInt(LabeledEditError.Text) + 1);
+
+      ShowMessage(message1);
     end;
   end;
 
   PostData.Free;
-
-//   page := IdHTTP.Get('https://zkillboard.com/robots.txt');
 
   Beep;
   Sleep(1000);
