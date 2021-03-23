@@ -11,7 +11,9 @@ uses
   IdTCPClient, IdHTTP, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
   IdSSLOpenSSL,
 
-  MMSystem;
+  MMSystem,
+
+  ClipBrd;
 
 type
   TFormMain = class(TForm)
@@ -19,9 +21,6 @@ type
     ImageListTray: TImageList;
     PopupMenuTray: TPopupMenu;
     menuQuit: TMenuItem;
-    MemoCurrent: TMemo;
-    Timer: TTimer;
-    MemoLast: TMemo;
     IdHTTP: TIdHTTP;
     IdSSLIOHandlerSocketOpenSSL: TIdSSLIOHandlerSocketOpenSSL;
     MemoResult: TMemo;
@@ -30,18 +29,23 @@ type
     LabeledEditSuccess: TLabeledEdit;
     LabeledEditSkip: TLabeledEdit;
     menuShowMainFormDebug: TMenuItem;
-    LabelCurrentClipboard: TLabel;
-    LabelLastClipboard: TLabel;
     LabelPostResults: TLabel;
     procedure menuQuitClick(Sender: TObject);
-    procedure TimerTimer(Sender: TObject);
     procedure menuShowMainFormDebugClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
   private
     { Private declarations }
+
+    // https://delphisources.ru/pages/faq/base/clipbrd_chg_notify.html
+    FNextClipboardViewer: HWND;
+    procedure WMChangeCBChain(var Msg : TWMChangeCBChain); message WM_CHANGECBCHAIN;
+    procedure WMDrawClipboard(var Msg : TWMDrawClipboard); message WM_DRAWCLIPBOARD;
   public
     { Public declarations }
-    procedure addInArray(idString: String);
-    function inArray(idString: String): Boolean;
+    procedure ClipboardChange();
+    procedure RemeberKillmailId(idString: String);
+    function IsPostedKillmailId(idString: String): Boolean;
     procedure Post(id, hash: String);
     procedure Explode(var a: array of string; Border, S: string);
   end;
@@ -57,7 +61,7 @@ implementation
 
 {$R *.dfm}
 
-procedure TFormMain.addInArray(idString: String);
+procedure TFormMain.RemeberKillmailId(idString: String);
 var
   id: Integer;
 begin
@@ -76,7 +80,7 @@ begin
   postIds[postIdCount - 1] := id;
 end;
 
-function TFormMain.inArray(idString: String): Boolean;
+function TFormMain.IsPostedKillmailId(idString: String): Boolean;
 var
   i, id: Integer;
 begin
@@ -108,7 +112,7 @@ begin
   Visible := menuShowMainFormDebug.Checked;
 end;
 
-procedure TFormMain.TimerTimer(Sender: TObject);
+procedure TFormMain.ClipboardChange();
 (*
 Examples:
 <url=killReport:91650826:2876d8ccc7f479c6a73b7b9e80d2dfc4b538d090>Kill: Mr Antisocial (Stiletto)</url>
@@ -117,50 +121,39 @@ https://esi.evetech.net/v1/killmails/91650392/0ef7394f0d770d96567063fbda8d661243
 const
   Pattern = '(<url=killReport:\d+:[0-9a-fA-F]{40}>|killmails/\d+/[0-9a-fA-F]{40}/)';
 var
-  i, j: Integer;
+  j: Integer;
   RegEx: TRegEx;
   Matches: TMatchCollection;
   Match, id, hash: String;
-  A: array of String;
-
+  explodedString: array of String;
 begin
-  MemoCurrent.Clear;
-  MemoCurrent.PasteFromClipboard;
+  SetLength(explodedString, 10);
+  RegEx := TRegEx.Create(Pattern);
 
-  if (not MemoCurrent.Lines.Equals(MemoLast.Lines)) then begin
-    MemoLast.Clear;
-    MemoLast.Lines.AddStrings(MemoCurrent.Lines);
+  Matches := RegEx.Matches(Clipboard.AsText);
+  for j := 0 to Matches.Count - 1 do begin
+    Match := Matches.Item[j].Value;
 
-    SetLength(A, 10);
-    RegEx := TRegEx.Create(Pattern);
+    id := '';
+    hash := '';
 
-    for i := 0 to MemoLast.Lines.Count - 1 do begin
-      Matches := RegEx.Matches(MemoLast.Lines[i]);
-      for j := 0 to Matches.Count - 1 do begin
-        Match := Matches.Item[j].Value;
-
-        id := '';
-        hash := '';
-
-        if (Match[1] = '<') then begin
-          Explode(A, ':', Match);
-          id := A[1];
-          hash := Copy(A[2], 1, Length(A[2]) - 1);
-        end
-        else if (Match[1] = 'k') then begin
-          Explode(A, '/', Match);
-          id := A[1];
-          hash := A[2];
-        end;
-
-        if (id = '') then continue;
-
-        Post(id, hash);
-      end;
+    if (Match[1] = '<') then begin
+      Explode(explodedString, ':', Match);
+      id := explodedString[1];
+      hash := Copy(explodedString[2], 1, Length(explodedString[2]) - 1);
+    end
+    else if (Match[1] = 'k') then begin
+      Explode(explodedString, '/', Match);
+      id := explodedString[1];
+      hash := explodedString[2];
     end;
 
-    A := nil;
+    if (id = '') then continue;
+
+    Post(id, hash);
   end;
+
+  explodedString := nil;
 end;
 
 procedure TFormMain.Post(id, hash: String);
@@ -168,7 +161,7 @@ var
   PostData: TStringList;
   page, message1: String;
 begin
-  if (inArray(id)) then begin
+  if (IsPostedKillmailId(id)) then begin
     // Skip
     sndPlaySound('skip.wav', SND_NODEFAULT Or SND_ASYNC);
     LabeledEditSkip.Text := IntToStr(StrToInt(LabeledEditSkip.Text) + 1);
@@ -201,7 +194,7 @@ begin
         sndPlaySound('success.wav', SND_NODEFAULT Or SND_ASYNC);
         LabeledEditSuccess.Text := IntToStr(StrToInt(LabeledEditSuccess.Text) + 1);
 
-        addInArray(id);
+        RemeberKillmailId(id);
       end else begin
         // Error
         sndPlaySound('error.wav', SND_NODEFAULT Or SND_ASYNC);
@@ -241,6 +234,44 @@ begin
      Delete(S2, 1,Length(a[i] + Border));
      Inc(i);
    until S2 = '';
+end;
+
+procedure TFormMain.FormCreate(Sender: TObject);
+begin
+  FNextClipboardViewer := SetClipboardViewer(Handle);
+end;
+
+procedure TFormMain.FormDestroy(Sender: TObject);
+begin
+  ChangeClipboardChain(Handle, FNextClipboardViewer);
+end;
+
+procedure TFormMain.WMChangeCBChain(var Msg : TWMChangeCBChain);
+begin
+  inherited;
+    { mark message as done }
+  Msg.Result := 0;
+    { the chain has changed }
+  if Msg.Remove = FNextClipboardViewer then
+    { The next window in the clipboard viewer chain had been removed. We recreate it. }
+    FNextClipboardViewer := Msg.Next
+  else
+    { Inform the next window in the clipboard viewer chain }
+    SendMessage(FNextClipboardViewer, WM_CHANGECBCHAIN, Msg.Remove, Msg.Next);
+end;
+
+
+procedure TFormMain.WMDrawClipboard(var Msg : TWMDrawClipboard);
+begin
+  inherited;
+    { Clipboard content has changed }
+  try
+    // MessageBox(0, 'Clipboard content has changed!', 'Clipboard Viewer', MB_ICONINFORMATION);
+    ClipboardChange;
+  finally
+    { Inform the next window in the clipboard viewer chain }
+    SendMessage(FNextClipboardViewer, WM_DRAWCLIPBOARD, 0, 0);
+  end;
 end;
 
 end.

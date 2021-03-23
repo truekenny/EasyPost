@@ -3,7 +3,7 @@ object FormMain: TFormMain
   Top = 0
   Caption = 'EasyPost'
   ClientHeight = 377
-  ClientWidth = 1033
+  ClientWidth = 519
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -48,56 +48,26 @@ object FormMain: TFormMain
     0000000000000000000000000000000000000000000000000000000000000000
     000000000000000000000000000000000000000000000000000000000000}
   OldCreateOrder = False
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
   PixelsPerInch = 96
   TextHeight = 13
-  object LabelCurrentClipboard: TLabel
-    Left = 8
-    Top = 8
-    Width = 85
-    Height = 13
-    Caption = 'Current Clipboard'
-  end
-  object LabelLastClipboard: TLabel
-    Left = 8
-    Top = 157
-    Width = 68
-    Height = 13
-    Caption = 'Last Clipboard'
-  end
   object LabelPostResults: TLabel
-    Left = 528
+    Left = 8
     Top = 8
     Width = 59
     Height = 13
     Caption = 'Post Results'
   end
-  object MemoCurrent: TMemo
+  object MemoResult: TMemo
     Left = 8
-    Top = 24
+    Top = 27
     Width = 502
-    Height = 121
+    Height = 294
+    Color = clBtnFace
+    ReadOnly = True
     ScrollBars = ssBoth
     TabOrder = 0
-  end
-  object MemoLast: TMemo
-    Left = 8
-    Top = 176
-    Width = 502
-    Height = 121
-    Color = clBtnFace
-    ReadOnly = True
-    ScrollBars = ssBoth
-    TabOrder = 1
-  end
-  object MemoResult: TMemo
-    Left = 528
-    Top = 24
-    Width = 497
-    Height = 341
-    Color = clBtnFace
-    ReadOnly = True
-    ScrollBars = ssBoth
-    TabOrder = 2
   end
   object LabeledEditWrongPost: TLabeledEdit
     Left = 8
@@ -109,7 +79,7 @@ object FormMain: TFormMain
     EditLabel.Height = 13
     EditLabel.Caption = 'Wrong Post'
     ReadOnly = True
-    TabOrder = 3
+    TabOrder = 1
     Text = '0'
   end
   object LabeledEditError: TLabeledEdit
@@ -122,7 +92,7 @@ object FormMain: TFormMain
     EditLabel.Height = 13
     EditLabel.Caption = 'Error'
     ReadOnly = True
-    TabOrder = 4
+    TabOrder = 2
     Text = '0'
   end
   object LabeledEditSuccess: TLabeledEdit
@@ -135,7 +105,7 @@ object FormMain: TFormMain
     EditLabel.Height = 13
     EditLabel.Caption = 'Success'
     ReadOnly = True
-    TabOrder = 5
+    TabOrder = 3
     Text = '0'
   end
   object LabeledEditSkip: TLabeledEdit
@@ -148,19 +118,19 @@ object FormMain: TFormMain
     EditLabel.Height = 13
     EditLabel.Caption = 'Skip'
     ReadOnly = True
-    TabOrder = 6
+    TabOrder = 4
     Text = '0'
   end
   object TrayIcon: TTrayIcon
     Icons = ImageListTray
     PopupMenu = PopupMenuTray
     Visible = True
-    Left = 648
-    Top = 72
+    Left = 32
+    Top = 56
   end
   object ImageListTray: TImageList
-    Left = 704
-    Top = 88
+    Left = 88
+    Top = 72
     Bitmap = {
       494C010101000800040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
@@ -302,8 +272,8 @@ object FormMain: TFormMain
       000000000000}
   end
   object PopupMenuTray: TPopupMenu
-    Left = 760
-    Top = 104
+    Left = 144
+    Top = 88
     object menuShowMainFormDebug: TMenuItem
       Caption = 'Show Main Form (Debug)'
       OnClick = menuShowMainFormDebugClick
@@ -312,11 +282,6 @@ object FormMain: TFormMain
       Caption = 'Quit'
       OnClick = menuQuitClick
     end
-  end
-  object Timer: TTimer
-    OnTimer = TimerTimer
-    Left = 648
-    Top = 144
   end
   object IdHTTP: TIdHTTP
     IOHandler = IdSSLIOHandlerSocketOpenSSL
@@ -334,8 +299,8 @@ object FormMain: TFormMain
     Request.Ranges.Units = 'bytes'
     Request.Ranges = <>
     HTTPOptions = [hoForceEncodeParams]
-    Left = 704
-    Top = 160
+    Left = 88
+    Top = 144
   end
   object IdSSLIOHandlerSocketOpenSSL: TIdSSLIOHandlerSocketOpenSSL
     MaxLineAction = maException
@@ -344,7 +309,7 @@ object FormMain: TFormMain
     SSLOptions.Mode = sslmUnassigned
     SSLOptions.VerifyMode = []
     SSLOptions.VerifyDepth = 0
-    Left = 760
-    Top = 176
+    Left = 144
+    Top = 160
   end
 end
