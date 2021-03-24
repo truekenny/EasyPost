@@ -3,17 +3,34 @@ unit UnitM;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, System.ImageList,
-  Vcl.ImgList, Vcl.Menus, Vcl.StdCtrls,
-
-  System.RegularExpressions, IdBaseComponent, IdComponent, IdTCPConnection,
-  IdTCPClient, IdHTTP, IdIOHandler, IdIOHandlerSocket, IdIOHandlerStack, IdSSL,
+  ClipBrd,
+  IdBaseComponent,
+  IdComponent,
+  IdDNSResolver,
+  IdHTTP,
+  IdIOHandler,
+  IdIOHandlerSocket,
+  IdIOHandlerStack,
+  IdSSL,
   IdSSLOpenSSL,
-
+  IdTCPClient,
+  IdTCPConnection,
   MMSystem,
-
-  ClipBrd;
+  System.Classes,
+  System.ImageList,
+  System.RegularExpressions,
+  System.SysUtils,
+  System.Variants,
+  Vcl.Controls,
+  Vcl.Dialogs,
+  Vcl.ExtCtrls,
+  Vcl.Forms,
+  Vcl.Graphics,
+  Vcl.ImgList,
+  Vcl.Menus,
+  Vcl.StdCtrls,
+  Winapi.Messages,
+  Winapi.Windows;
 
 const
   MAX_POST_IDS = 10000;
@@ -33,6 +50,7 @@ type
     LabeledEditSkip: TLabeledEdit;
     menuShowMainFormDebug: TMenuItem;
     LabelPostResults: TLabel;
+    IdDNSResolver: TIdDNSResolver;
     procedure menuQuitClick(Sender: TObject);
     procedure menuShowMainFormDebugClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -41,6 +59,7 @@ type
     { Private declarations }
     postIds: Array[0..MAX_POST_IDS] of Integer;
     postIdCount: Integer;
+    zkillboardIp: String;
 
     // https://delphisources.ru/pages/faq/base/clipbrd_chg_notify.html
     FNextClipboardViewer: HWND;
@@ -54,6 +73,8 @@ type
     function IsPostedKillmailId(idString: String): Boolean;
     procedure Post(id, hash: String);
     procedure Explode(var a: Array of String; Border, S: String);
+    procedure OnSocketAllocated(Sender: TObject);
+    procedure ResolveZkillboard();
   end;
 
 var
@@ -265,8 +286,56 @@ begin
   until S2 = '';
 end;
 
+procedure TFormMain.OnSocketAllocated(Sender: TObject);
+begin
+  // idHTTP connect by IP address, not by domain name
+  IdHTTP.IOHandler.Host := zkillboardIp;
+end;
+
+procedure TFormMain.ResolveZkillboard();
+var
+  i: Integer;
+  Record1: TResultRecord;
+  aRecord: TARecord;
+  message1: String;
+begin
+  zkillboardIp := '';
+
+  try
+    IdDNSResolver.Resolve('zkillboard.com');
+
+    for i := 0 to IdDNSResolver.QueryResult.Count -1 do
+    begin
+      Record1 := IdDNSResolver.QueryResult[i];
+      case Record1.RecType of
+        qtA: begin
+          aRecord := TARecord(Record1);
+
+          zkillboardIp := aRecord.IPAddress;
+
+        end;
+      end;
+    end;
+  except
+    on E : Exception do begin
+      message1 := E.ClassName + ': ' + E.Message;
+      ShowMessage('Cant resolve zkillboard.com' + #13 + message1);
+      Halt;
+    end;
+  end;
+
+  if (zkillboardIp = '') then begin
+    ShowMessage('Cant resolve zkillboard.com');
+    Halt;
+  end;
+end;
+
 procedure TFormMain.FormCreate(Sender: TObject);
 begin
+  ResolveZkillboard;
+
+  IdHTTP.OnSocketAllocated := OnSocketAllocated;
+
   postIdCount := 0;
 
   FNextClipboardViewer := SetClipboardViewer(Handle);

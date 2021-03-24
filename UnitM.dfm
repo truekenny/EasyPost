@@ -312,4 +312,13 @@ object FormMain: TFormMain
     Left = 144
     Top = 160
   end
+  object IdDNSResolver: TIdDNSResolver
+    QueryType = [qtA]
+    WaitingTime = 5000
+    AllowRecursiveQueries = True
+    Host = '8.8.8.8'
+    IPVersion = Id_IPv4
+    Left = 32
+    Top = 128
+  end
 end
