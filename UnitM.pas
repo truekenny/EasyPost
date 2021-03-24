@@ -107,7 +107,8 @@ begin
       if RetryCount <= MAX_RETRY_COUNT then begin
         Sleep(RetryCount * 100)
       end else begin
-        raise Exception.Create('GetClipboardText failed');
+        // raise Exception.Create('GetClipboardText failed');
+        sndPlaySound('error.wav', SND_NODEFAULT Or SND_ASYNC);
       end;
     end;
   end;
