@@ -314,7 +314,6 @@ begin
           aRecord := TARecord(Record1);
 
           zkillboardIp := aRecord.IPAddress;
-
         end;
       end;
     end;
@@ -337,6 +336,9 @@ begin
   TrayIcon.IconIndex := ACTIVE_ICON_INDEX;
   ResolveZkillboard;
   TrayIcon.IconIndex := DEFAULT_ICON_INDEX;
+
+  IdHTTP.ConnectTimeout := 5000;
+  IdHTTP.ReadTimeout := 5000;
 
   IdHTTP.OnSocketAllocated := OnSocketAllocated;
 
