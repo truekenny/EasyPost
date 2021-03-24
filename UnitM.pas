@@ -93,6 +93,7 @@ var
   RetryCount : Integer;
   Success: Boolean;
 begin
+  Result := '';
   RetryCount := 0;
   Success := False;
 
@@ -107,8 +108,7 @@ begin
       if RetryCount <= MAX_RETRY_COUNT then begin
         Sleep(RetryCount * 100)
       end else begin
-        // raise Exception.Create('GetClipboardText failed');
-        sndPlaySound('error.wav', SND_NODEFAULT Or SND_ASYNC);
+        raise Exception.Create('GetClipboardText failed');
       end;
     end;
   end;
@@ -179,11 +179,19 @@ var
   Matches: TMatchCollection;
   Match, id, hash: String;
   explodedString: array of String;
+  clipboardText: String;
 begin
   SetLength(explodedString, 10);
   RegEx := TRegEx.Create(Pattern);
 
-  Matches := RegEx.Matches(GetClipboardText());
+  clipboardText := '';
+  try
+    clipboardText := GetClipboardText();
+  except
+    sndPlaySound('error.wav', SND_NODEFAULT Or SND_ASYNC);
+  end;
+
+  Matches := RegEx.Matches(clipboardText);
   for j := 0 to Matches.Count - 1 do begin
     Match := Matches.Item[j].Value;
 
