@@ -34,6 +34,8 @@ uses
 
 const
   MAX_POST_IDS = 10000;
+  DEFAULT_ICON_INDEX = 0;
+  ACTIVE_ICON_INDEX = 1;
 
 type
   TFormMain = class(TForm)
@@ -332,7 +334,9 @@ end;
 
 procedure TFormMain.FormCreate(Sender: TObject);
 begin
+  TrayIcon.IconIndex := ACTIVE_ICON_INDEX;
   ResolveZkillboard;
+  TrayIcon.IconIndex := DEFAULT_ICON_INDEX;
 
   IdHTTP.OnSocketAllocated := OnSocketAllocated;
 
@@ -367,7 +371,9 @@ begin
     { Clipboard content has changed }
   try
     // MessageBox(0, 'Clipboard content has changed!', 'Clipboard Viewer', MB_ICONINFORMATION);
+    TrayIcon.IconIndex := ACTIVE_ICON_INDEX;
     ClipboardChange;
+    TrayIcon.IconIndex := DEFAULT_ICON_INDEX;
   finally
     { Inform the next window in the clipboard viewer chain }
     SendMessage(FNextClipboardViewer, WM_DRAWCLIPBOARD, 0, 0);
