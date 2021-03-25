@@ -5,6 +5,8 @@ object FormMain: TFormMain
   ClientHeight = 377
   ClientWidth = 519
   Color = clBtnFace
+  Constraints.MinHeight = 416
+  Constraints.MinWidth = 535
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -50,6 +52,9 @@ object FormMain: TFormMain
   OldCreateOrder = False
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  DesignSize = (
+    519
+    377)
   PixelsPerInch = 96
   TextHeight = 13
   object LabelPostResults: TLabel
@@ -64,6 +69,7 @@ object FormMain: TFormMain
     Top = 27
     Width = 502
     Height = 294
+    Anchors = [akLeft, akTop, akRight, akBottom]
     Color = clBtnFace
     ReadOnly = True
     ScrollBars = ssBoth
@@ -74,6 +80,7 @@ object FormMain: TFormMain
     Top = 344
     Width = 121
     Height = 21
+    Anchors = [akLeft, akBottom]
     Color = clBtnFace
     EditLabel.Width = 56
     EditLabel.Height = 13
@@ -87,6 +94,7 @@ object FormMain: TFormMain
     Top = 344
     Width = 121
     Height = 21
+    Anchors = [akLeft, akBottom]
     Color = clBtnFace
     EditLabel.Width = 24
     EditLabel.Height = 13
@@ -100,6 +108,7 @@ object FormMain: TFormMain
     Top = 344
     Width = 121
     Height = 21
+    Anchors = [akLeft, akBottom]
     Color = clBtnFace
     EditLabel.Width = 38
     EditLabel.Height = 13
@@ -113,6 +122,7 @@ object FormMain: TFormMain
     Top = 344
     Width = 121
     Height = 21
+    Anchors = [akLeft, akBottom]
     Color = clBtnFace
     EditLabel.Width = 19
     EditLabel.Height = 13
@@ -306,6 +316,8 @@ object FormMain: TFormMain
     MaxLineAction = maException
     Port = 0
     DefaultPort = 0
+    SSLOptions.Method = sslvTLSv1_2
+    SSLOptions.SSLVersions = [sslvTLSv1_2]
     SSLOptions.Mode = sslmUnassigned
     SSLOptions.VerifyMode = []
     SSLOptions.VerifyDepth = 0
