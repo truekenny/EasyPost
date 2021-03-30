@@ -29,11 +29,11 @@ uses
   Vcl.ImgList,
   Vcl.Menus,
   Vcl.StdCtrls,
+  UnitPostThread,
   Winapi.Messages,
   Winapi.Windows;
 
 const
-  MAX_POST_IDS = 10000;
   DEFAULT_ICON_INDEX = 0;
   ACTIVE_ICON_INDEX = 1;
 
@@ -57,11 +57,14 @@ type
     procedure menuShowMainFormDebugClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure IdHTTPWorkBegin(ASender: TObject; AWorkMode: TWorkMode;
+      AWorkCountMax: Int64);
+    procedure IdHTTPWorkEnd(ASender: TObject; AWorkMode: TWorkMode);
   private
     { Private declarations }
-    postIds: Array[0..MAX_POST_IDS] of Integer;
-    postIdCount: Integer;
     zkillboardIp: String;
+
+    PostThread: TPostThread;
 
     // https://delphisources.ru/pages/faq/base/clipbrd_chg_notify.html
     FNextClipboardViewer: HWND;
@@ -71,9 +74,7 @@ type
     { Public declarations }
     function GetClipboardText(): String;
     procedure ClipboardChange();
-    procedure RemeberKillmailId(idString: String);
-    function IsPostedKillmailId(idString: String): Boolean;
-    procedure Post(id, hash: String);
+
     procedure Explode(var a: Array of String; Border, S: String);
     procedure OnSocketAllocated(Sender: TObject);
     procedure ResolveZkillboard();
@@ -114,43 +115,16 @@ begin
   end;
 end;
 
-procedure TFormMain.RemeberKillmailId(idString: String);
-var
-  id: Integer;
+
+procedure TFormMain.IdHTTPWorkBegin(ASender: TObject; AWorkMode: TWorkMode;
+  AWorkCountMax: Int64);
 begin
-  try
-    id := StrToInt(idString);
-  finally
-
-  end;
-
-  // Reset
-  if (postIdCount = MAX_POST_IDS - 1) then begin
-    postIdCount := 0;
-  end;
-
-  postIdCount := postIdCount + 1;
-  postIds[postIdCount - 1] := id;
+    TrayIcon.IconIndex := ACTIVE_ICON_INDEX;
 end;
 
-function TFormMain.IsPostedKillmailId(idString: String): Boolean;
-var
-  i, id: Integer;
+procedure TFormMain.IdHTTPWorkEnd(ASender: TObject; AWorkMode: TWorkMode);
 begin
-  Result := False;
-
-  try
-    id := StrToInt(idString);
-  finally
-
-  end;
-
-  for i := 0 to postIdCount - 1 do begin
-    if (postIds[i] = id) then begin
-      Result := True;
-      Exit;
-    end;
-  end;
+    TrayIcon.IconIndex := DEFAULT_ICON_INDEX;
 end;
 
 procedure TFormMain.menuQuitClick(Sender: TObject);
@@ -211,76 +185,10 @@ begin
 
     if (id = '') then continue;
 
-    Post(id, hash);
+    PostThread.AddKillmailQueue(StrToInt(id), hash);
   end;
 
   explodedString := nil;
-end;
-
-procedure TFormMain.Post(id, hash: String);
-var
-  PostData: TStringList;
-  page, message1: String;
-begin
-  if (IsPostedKillmailId(id)) then begin
-    // Skip
-    sndPlaySound('skip.wav', SND_NODEFAULT Or SND_ASYNC);
-    LabeledEditSkip.Text := IntToStr(StrToInt(LabeledEditSkip.Text) + 1);
-    Exit;
-  end;
-
-  page := '';
-  PostData := TStringList.Create;
-
-  try
-    IdHTTP.Request.Referer := 'https://zkillboard.com/post/';
-    PostData.Add('killmailurl=https://esi.evetech.net/v1/killmails/' + id + '/' + hash + '/?datasource=tranquility');
-    page := IdHTTP.Post('https://zkillboard.com/post/', PostData);
-
-    MemoResult.Clear;
-    MemoResult.Lines.Add(page);
-
-    // Wrong post
-    sndPlaySound('wrong.wav', SND_NODEFAULT Or SND_ASYNC);
-    LabeledEditWrongPost.Text := IntToStr(StrToInt(LabeledEditWrongPost.Text) + 1);
-  except
-    on E: EIdHTTPProtocolException do begin
-      message1 := E.ClassName + ': ' + E.Message;
-
-      MemoResult.Clear;
-      MemoResult.Lines.Add(message1);
-
-      if (E.ErrorCode = 302) then begin
-        // Success
-        sndPlaySound('success.wav', SND_NODEFAULT Or SND_ASYNC);
-        LabeledEditSuccess.Text := IntToStr(StrToInt(LabeledEditSuccess.Text) + 1);
-
-        RemeberKillmailId(id);
-      end else begin
-        // Error
-        sndPlaySound('error.wav', SND_NODEFAULT Or SND_ASYNC);
-        LabeledEditError.Text := IntToStr(StrToInt(LabeledEditError.Text) + 1);
-
-        ShowMessage(message1);
-      end;
-    end;
-    on E : Exception do begin
-      message1 := E.ClassName + ': ' + E.Message;
-
-      MemoResult.Clear;
-      MemoResult.Lines.Add(message1);
-
-      // Error
-      sndPlaySound('error.wav', SND_NODEFAULT Or SND_ASYNC);
-      LabeledEditError.Text := IntToStr(StrToInt(LabeledEditError.Text) + 1);
-
-      ShowMessage(message1);
-    end;
-  end;
-
-  PostData.Free;
-
-  Sleep(1000);
 end;
 
 procedure TFormMain.Explode(var a: Array of String; Border, S: String);
@@ -351,14 +259,21 @@ begin
 
   IdHTTP.OnSocketAllocated := OnSocketAllocated;
 
-  postIdCount := 0;
+  PostThread := TPostThread.Create(IdHTTP, MemoResult, LabeledEditWrongPost,
+    LabeledEditError, LabeledEditSuccess, LabeledEditSkip);
 
+  // Start clipboard listen
   FNextClipboardViewer := SetClipboardViewer(Handle);
 end;
 
 procedure TFormMain.FormDestroy(Sender: TObject);
 begin
   ChangeClipboardChain(Handle, FNextClipboardViewer);
+
+  PostThread.Terminate;
+  PostThread.WakeUpEvent;
+  PostThread.WaitFor;
+  PostThread.Free;
 end;
 
 procedure TFormMain.WMChangeCBChain(var Msg : TWMChangeCBChain);
@@ -382,9 +297,7 @@ begin
     { Clipboard content has changed }
   try
     // MessageBox(0, 'Clipboard content has changed!', 'Clipboard Viewer', MB_ICONINFORMATION);
-    TrayIcon.IconIndex := ACTIVE_ICON_INDEX;
     ClipboardChange;
-    TrayIcon.IconIndex := DEFAULT_ICON_INDEX;
   finally
     { Inform the next window in the clipboard viewer chain }
     SendMessage(FNextClipboardViewer, WM_DRAWCLIPBOARD, 0, 0);

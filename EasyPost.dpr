@@ -2,7 +2,8 @@ program EasyPost;
 
 uses
   Vcl.Forms,
-  UnitM in 'UnitM.pas' {FormMain};
+  UnitM in 'UnitM.pas' {FormMain},
+  UnitPostThread in 'UnitPostThread.pas';
 
 {$R *.res}
 

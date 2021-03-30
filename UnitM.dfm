@@ -295,6 +295,8 @@ object FormMain: TFormMain
   end
   object IdHTTP: TIdHTTP
     IOHandler = IdSSLIOHandlerSocketOpenSSL
+    OnWorkBegin = IdHTTPWorkBegin
+    OnWorkEnd = IdHTTPWorkEnd
     AllowCookies = True
     ProxyParams.BasicAuthentication = False
     ProxyParams.ProxyPort = 0
