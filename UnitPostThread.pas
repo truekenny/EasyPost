@@ -46,7 +46,8 @@ type
     procedure Execute; override;
 
   public
-    constructor Create(_idHTTP: TIdHTTP;
+    constructor Create(ApplicationHandle: Cardinal;
+      _idHTTP: TIdHTTP;
       _MemoResult: TMemo;
       _LabeledEditWrongPost: TLabeledEdit;
       _LabeledEditError: TLabeledEdit;
@@ -188,7 +189,8 @@ begin
   end;
 end;
 
-constructor TPostThread.Create(_idHTTP: TIdHTTP;
+constructor TPostThread.Create(ApplicationHandle: Cardinal;
+  _idHTTP: TIdHTTP;
   _MemoResult: TMemo;
   _LabeledEditWrongPost: TLabeledEdit;
   _LabeledEditError: TLabeledEdit;
@@ -206,7 +208,8 @@ begin
 
   KillmailQueueList := TThreadList.Create;
   // ManualReset=False, InitialState=Blocked
-  Event := TEvent.Create(nil, False, False, 'EasyPostEvent');
+
+  Event := TEvent.Create(nil, False, False, 'EasyPostEvent' + IntToStr(ApplicationHandle));
 
   inherited Create(False);
   OnTerminate := OnThreadTerminate;

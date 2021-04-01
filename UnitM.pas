@@ -250,6 +250,9 @@ end;
 
 procedure TFormMain.FormCreate(Sender: TObject);
 begin
+  FNextClipboardViewer := 0;
+  PostThread := nil;
+
   TrayIcon.IconIndex := ACTIVE_ICON_INDEX;
   ResolveZkillboard;
   TrayIcon.IconIndex := DEFAULT_ICON_INDEX;
@@ -259,7 +262,8 @@ begin
 
   IdHTTP.OnSocketAllocated := OnSocketAllocated;
 
-  PostThread := TPostThread.Create(IdHTTP, MemoResult, LabeledEditWrongPost,
+  PostThread := TPostThread.Create(Application.Handle,
+    IdHTTP, MemoResult, LabeledEditWrongPost,
     LabeledEditError, LabeledEditSuccess, LabeledEditSkip);
 
   // Start clipboard listen
@@ -268,12 +272,16 @@ end;
 
 procedure TFormMain.FormDestroy(Sender: TObject);
 begin
-  ChangeClipboardChain(Handle, FNextClipboardViewer);
+  if (FNextClipboardViewer <> 0) then begin
+    ChangeClipboardChain(Handle, FNextClipboardViewer);
+  end;
 
-  PostThread.Terminate;
-  PostThread.WakeUpEvent;
-  PostThread.WaitFor;
-  PostThread.Free;
+  if (PostThread <> nil) then begin
+    PostThread.Terminate;
+    PostThread.WakeUpEvent;
+    PostThread.WaitFor;
+    PostThread.Free;
+  end;
 end;
 
 procedure TFormMain.WMChangeCBChain(var Msg : TWMChangeCBChain);
