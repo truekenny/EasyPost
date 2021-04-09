@@ -2,7 +2,7 @@ object FormMain: TFormMain
   Left = 0
   Top = 0
   Caption = 'EasyPost'
-  ClientHeight = 377
+  ClientHeight = 383
   ClientWidth = 519
   Color = clBtnFace
   Constraints.MinHeight = 416
@@ -52,9 +52,10 @@ object FormMain: TFormMain
   OldCreateOrder = False
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnResize = FormResize
   DesignSize = (
     519
-    377)
+    383)
   PixelsPerInch = 96
   TextHeight = 13
   object LabelPostResults: TLabel
@@ -68,7 +69,7 @@ object FormMain: TFormMain
     Left = 8
     Top = 27
     Width = 502
-    Height = 294
+    Height = 262
     Anchors = [akLeft, akTop, akRight, akBottom]
     Color = clBtnFace
     ReadOnly = True
@@ -77,7 +78,7 @@ object FormMain: TFormMain
   end
   object LabeledEditWrongPost: TLabeledEdit
     Left = 8
-    Top = 344
+    Top = 350
     Width = 121
     Height = 21
     Anchors = [akLeft, akBottom]
@@ -86,12 +87,13 @@ object FormMain: TFormMain
     EditLabel.Height = 13
     EditLabel.Caption = 'Wrong Post'
     ReadOnly = True
-    TabOrder = 1
+    TabOrder = 3
     Text = '0'
+    ExplicitTop = 344
   end
   object LabeledEditError: TLabeledEdit
     Left = 135
-    Top = 344
+    Top = 350
     Width = 121
     Height = 21
     Anchors = [akLeft, akBottom]
@@ -100,12 +102,13 @@ object FormMain: TFormMain
     EditLabel.Height = 13
     EditLabel.Caption = 'Error'
     ReadOnly = True
-    TabOrder = 2
+    TabOrder = 4
     Text = '0'
+    ExplicitTop = 344
   end
   object LabeledEditSuccess: TLabeledEdit
     Left = 262
-    Top = 344
+    Top = 350
     Width = 121
     Height = 21
     Anchors = [akLeft, akBottom]
@@ -114,12 +117,13 @@ object FormMain: TFormMain
     EditLabel.Height = 13
     EditLabel.Caption = 'Success'
     ReadOnly = True
-    TabOrder = 3
+    TabOrder = 5
     Text = '0'
+    ExplicitTop = 344
   end
   object LabeledEditSkip: TLabeledEdit
     Left = 389
-    Top = 344
+    Top = 350
     Width = 121
     Height = 21
     Anchors = [akLeft, akBottom]
@@ -128,8 +132,35 @@ object FormMain: TFormMain
     EditLabel.Height = 13
     EditLabel.Caption = 'Skip'
     ReadOnly = True
-    TabOrder = 4
+    TabOrder = 6
     Text = '0'
+    ExplicitTop = 344
+  end
+  object LabeledEditHandle: TLabeledEdit
+    Left = 8
+    Top = 312
+    Width = 121
+    Height = 21
+    Anchors = [akLeft, akBottom]
+    Color = clBtnFace
+    EditLabel.Width = 33
+    EditLabel.Height = 13
+    EditLabel.Caption = 'Handle'
+    ReadOnly = True
+    TabOrder = 1
+  end
+  object LabeledEditClipboardHandleNext: TLabeledEdit
+    Left = 135
+    Top = 312
+    Width = 121
+    Height = 21
+    Anchors = [akLeft, akBottom]
+    Color = clBtnFace
+    EditLabel.Width = 107
+    EditLabel.Height = 13
+    EditLabel.Caption = 'Clipboard Handle Next'
+    ReadOnly = True
+    TabOrder = 2
   end
   object TrayIcon: TTrayIcon
     Icons = ImageListTray
@@ -284,9 +315,9 @@ object FormMain: TFormMain
   object PopupMenuTray: TPopupMenu
     Left = 144
     Top = 88
-    object menuShowMainFormDebug: TMenuItem
-      Caption = 'Show Main Form (Debug)'
-      OnClick = menuShowMainFormDebugClick
+    object menuShowForm: TMenuItem
+      Caption = 'Show Form'
+      OnClick = menuShowFormClick
     end
     object menuQuit: TMenuItem
       Caption = 'Quit'

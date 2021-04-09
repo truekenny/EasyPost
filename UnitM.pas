@@ -50,16 +50,19 @@ type
     LabeledEditError: TLabeledEdit;
     LabeledEditSuccess: TLabeledEdit;
     LabeledEditSkip: TLabeledEdit;
-    menuShowMainFormDebug: TMenuItem;
+    menuShowForm: TMenuItem;
     LabelPostResults: TLabel;
     IdDNSResolver: TIdDNSResolver;
+    LabeledEditHandle: TLabeledEdit;
+    LabeledEditClipboardHandleNext: TLabeledEdit;
     procedure menuQuitClick(Sender: TObject);
-    procedure menuShowMainFormDebugClick(Sender: TObject);
+    procedure menuShowFormClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure IdHTTPWorkBegin(ASender: TObject; AWorkMode: TWorkMode;
       AWorkCountMax: Int64);
     procedure IdHTTPWorkEnd(ASender: TObject; AWorkMode: TWorkMode);
+    procedure FormResize(Sender: TObject);
   private
     { Private declarations }
     zkillboardIp: String;
@@ -71,6 +74,7 @@ type
     IsSuccessConnectToClipboard: Boolean;
     procedure WMChangeCBChain(var Msg : TWMChangeCBChain); message WM_CHANGECBCHAIN;
     procedure WMDrawClipboard(var Msg : TWMDrawClipboard); message WM_DRAWCLIPBOARD;
+    procedure ShowHandleNext();
   public
     { Public declarations }
     function GetClipboardText(): String;
@@ -133,11 +137,15 @@ begin
   Close;
 end;
 
-procedure TFormMain.menuShowMainFormDebugClick(Sender: TObject);
+procedure TFormMain.menuShowFormClick(Sender: TObject);
 begin
-  menuShowMainFormDebug.Checked := not menuShowMainFormDebug.Checked;
+  menuShowForm.Checked := not menuShowForm.Checked;
 
-  Visible := menuShowMainFormDebug.Checked;
+  Visible := menuShowForm.Checked;
+
+  if (IsIconic(Handle)) then begin
+    ShowWindow(Handle, SW_RESTORE);
+  end;
 end;
 
 procedure TFormMain.ClipboardChange();
@@ -254,6 +262,8 @@ begin
   FNextClipboardViewer := 0;
   PostThread := nil;
   IsSuccessConnectToClipboard := False;
+  LabeledEditHandle.Text := IntToStr(Handle);
+
 
   TrayIcon.IconIndex := ACTIVE_ICON_INDEX;
   ResolveZkillboard;
@@ -270,6 +280,7 @@ begin
 
   // Start clipboard listen
   FNextClipboardViewer := SetClipboardViewer(Handle);
+  ShowHandleNext();
   IsSuccessConnectToClipboard := True;
 end;
 
@@ -287,16 +298,26 @@ begin
   end;
 end;
 
+procedure TFormMain.FormResize(Sender: TObject);
+begin
+  if (IsIconic(Handle)) then begin
+    menuShowForm.Checked := False;
+
+    Visible := menuShowForm.Checked;
+  end;
+end;
+
 procedure TFormMain.WMChangeCBChain(var Msg : TWMChangeCBChain);
 begin
   inherited;
     { mark message as done }
   Msg.Result := 0;
     { the chain has changed }
-  if Msg.Remove = FNextClipboardViewer then
+  if Msg.Remove = FNextClipboardViewer then begin
     { The next window in the clipboard viewer chain had been removed. We recreate it. }
-    FNextClipboardViewer := Msg.Next
-  else
+    FNextClipboardViewer := Msg.Next;
+    ShowHandleNext();
+  end else
     { Inform the next window in the clipboard viewer chain }
     SendMessage(FNextClipboardViewer, WM_CHANGECBCHAIN, Msg.Remove, Msg.Next);
 end;
@@ -313,6 +334,11 @@ begin
     { Inform the next window in the clipboard viewer chain }
     SendMessage(FNextClipboardViewer, WM_DRAWCLIPBOARD, 0, 0);
   end;
+end;
+
+procedure TFormMain.ShowHandleNext();
+begin
+  LabeledEditClipboardHandleNext.Text := IntToStr(FNextClipboardViewer);
 end;
 
 end.
