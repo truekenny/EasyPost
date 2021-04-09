@@ -68,6 +68,7 @@ type
 
     // https://delphisources.ru/pages/faq/base/clipbrd_chg_notify.html
     FNextClipboardViewer: HWND;
+    IsSuccessConnectToClipboard: Boolean;
     procedure WMChangeCBChain(var Msg : TWMChangeCBChain); message WM_CHANGECBCHAIN;
     procedure WMDrawClipboard(var Msg : TWMDrawClipboard); message WM_DRAWCLIPBOARD;
   public
@@ -252,6 +253,7 @@ procedure TFormMain.FormCreate(Sender: TObject);
 begin
   FNextClipboardViewer := 0;
   PostThread := nil;
+  IsSuccessConnectToClipboard := False;
 
   TrayIcon.IconIndex := ACTIVE_ICON_INDEX;
   ResolveZkillboard;
@@ -268,11 +270,12 @@ begin
 
   // Start clipboard listen
   FNextClipboardViewer := SetClipboardViewer(Handle);
+  IsSuccessConnectToClipboard := True;
 end;
 
 procedure TFormMain.FormDestroy(Sender: TObject);
 begin
-  if (FNextClipboardViewer <> 0) then begin
+  if (IsSuccessConnectToClipboard) then begin
     ChangeClipboardChain(Handle, FNextClipboardViewer);
   end;
 
