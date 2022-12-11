@@ -141,7 +141,7 @@ begin
         sndPlaySound('error.wav', SND_NODEFAULT Or SND_ASYNC);
         Synchronize(procedure begin LabeledEditError.Text := IntToStr(StrToInt(LabeledEditError.Text) + 1); end);
 
-        ShowMessage(message1);
+        // ShowMessage(message1);
       end;
     end;
     on E : Exception do begin
@@ -153,7 +153,7 @@ begin
       sndPlaySound('error.wav', SND_NODEFAULT Or SND_ASYNC);
       Synchronize(procedure begin LabeledEditError.Text := IntToStr(StrToInt(LabeledEditError.Text) + 1); end);
 
-      ShowMessage(message1);
+      // ShowMessage(message1);
     end;
   end;
 
@@ -171,6 +171,7 @@ end;
 procedure TPostThread.Execute;
 var
   KillmailRecord: ^TKIllmailRecord;
+  someKills: Boolean;
 begin
   while True do begin
     Event.WaitFor(INFINITE);
@@ -178,14 +179,20 @@ begin
     if Terminated then break;
 
     // Beep();
+    someKills := False;
     KillmailRecord := GetKillmailQueue;
     while (KillmailRecord <> nil) do begin
+      someKills := True;
       Post(IntToStr(KillmailRecord.id), String(KillmailRecord.hash));
 
       Dispose(KillmailRecord);
       KillmailRecord := GetKillmailQueue;
     end;
 
+    if someKills then begin
+      sndPlaySound('finish.wav', SND_NODEFAULT Or SND_ASYNC);
+      sleep(1000);
+    end;
   end;
 end;
 
